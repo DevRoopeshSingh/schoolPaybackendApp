@@ -17,7 +17,7 @@ app.use(express.json());
 
 // Routes
 app.get('/', (req, res) => {
-  res.send('Welcome to the My School App API');
+  res.send('Welcome to the My School App API handling');
 });
 
 app.get('/api', (req, res) => {
