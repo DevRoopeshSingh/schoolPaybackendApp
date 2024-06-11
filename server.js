@@ -20,17 +20,13 @@ app.get('/', (req, res) => {
   res.send('Welcome to the My School App API handling');
 });
 
-app.get('/api', (req, res) => {
-  res.json({
-      first_name:'Roopesh',last_name:'Singh',class:'BST IT',roll_no:'42',year:'2024'
-    });
-});
 
-app.use('/api', userRoutes);
-app.use('/api', feeRoutes);
-app.use('/api', attendanceRoutes);
-app.use('/api', schedulingRoutes);
-app.use('/api', communicationRoutes);
+
+app.use('/api/user', userRoutes);
+app.use('/api/fees', feeRoutes);
+app.use('/api/attendence', attendanceRoutes);
+app.use('/api/scheduling.', schedulingRoutes);
+app.use('/api/communication', communicationRoutes);
 
 
 app.listen(PORT, () => {
