@@ -3,22 +3,13 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const pool = require('../db')
-// Get all users
-// router.get('/users', async (req, res) => {
-//   try {
-//     const users = await db.query('SELECT * FROM user_mst;');
-//     console.log('db response',users);
-//     res.json(users.rows); // Send only the rows to the client
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Internal server error' });
-//   }
-// });
 
+
+// Get all users
 router.get('/users', async (req, res) => {
   try {
-    const [rows, fields] = await pool.query('SELECT * FROM user_mst;');
-    console.log('db response', rows);
+    const [rows] = await pool.query('SELECT * FROM user_mst;');
+    // console.log('db response', rows);
     res.json(rows); // Send only the rows to the client
   } catch (error) {
     console.error(error);
@@ -30,58 +21,104 @@ router.get('/users', async (req, res) => {
 router.get('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await db.query('SELECT * FROM user_mst WHERE user_id = $1', [id]);
-    if (user.rows.length === 0) {
+    
+    console.log('User ID:', id); // Log the ID
+
+    // Ensure ID is a valid number
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    const [rows] = await pool.query('SELECT * FROM user_mst WHERE user_id = ?', [id]);
+    console.log('Query Result:', rows); // Log the query result
+
+
+    if (rows.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json(user.rows[0]);
+    res.json(rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 // Create a new user
 router.post('/users', async (req, res) => {
   try {
-    const { first_name, middle_name, last_name, email } = req.body;
-    
-    // Validate request body
-    if (!first_name || !last_name || !email) {
+    console.log('request body', req.body);
+
+    const {
+      first_name,
+      middle_name,
+      last_name,
+      email_id,
+      user_pwd,
+      user_role_id,
+      is_active,
+      phone_no,
+      permanent_address,
+      current_address,
+      dob,
+      gender,
+      created_by,
+      modified_by
+    } = req.body;
+
+    // Validate required fields
+    console.log('validate required fields');
+    if (!first_name || !last_name || !email_id || !user_pwd || user_role_id === undefined || is_active === undefined || !phone_no || !dob || !gender || !created_by || !modified_by) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
     // Check if the user already exists
-    const existingUser = await db.query('SELECT * FROM user_mst WHERE email = $1', [email]);
-    if (existingUser.rows.length > 0) {
+    console.log('Check if the user already exists');
+    const [existingUser] = await pool.query('SELECT * FROM user_mst WHERE email_id = ?', [email_id]);
+    if (existingUser.length > 0) {
       return res.status(409).json({ message: 'User already exists' });
     }
 
-    // Create the new user
-    const newUser = await db.query('INSERT INTO user_mst (first_name, middle_name, last_name, email) VALUES ($1, $2, $3, $4) RETURNING *', [first_name, middle_name, last_name, email]);
-    res.status(201).json(newUser.rows[0]);
+    console.log('after Checking if the user already exists');
+
+    // Insert new user
+    const [result] = await pool.query(
+      'INSERT INTO user_mst (first_name, middle_name, last_name, email_id, user_pwd, user_role_id, is_active, phone_no, permanent_address, current_address, dob, gender, created_by, modified_by, created_date, modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+      [first_name, middle_name, last_name, email_id, user_pwd, user_role_id, is_active, phone_no, permanent_address, current_address, dob, gender, created_by, modified_by]
+    );
+
+    console.log('Create New User');
+
+    const [newUser] = await pool.query('SELECT * FROM user_mst WHERE user_id = ?', [result.insertId]);
+    res.status(201).json(newUser[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 // Update user by ID
 router.put('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
+    console.log('id',id);
     const { first_name, middle_name, last_name, email } = req.body;
+
+    console.log('request Body',req.body);
 
     // Validate request body
     if (!first_name || !last_name || !email) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const updatedUser = await db.query('UPDATE user_mst SET first_name = $1, middle_name = $2, last_name = $3, email = $4 WHERE user_id = $5 RETURNING *', [first_name, middle_name, last_name, email, id]);
-    if (updatedUser.rows.length === 0) {
+    const [result] = await pool.query('UPDATE user_mst SET first_name = ?, middle_name = ?, last_name = ?, email_id = ? WHERE user_id = ?', [first_name, middle_name, last_name, email, id]);
+    if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json(updatedUser.rows[0]);
+    const [updatedUser] = await pool.query('SELECT * FROM user_mst WHERE user_id = ?', [id]);
+    res.json(updatedUser[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
@@ -92,8 +129,8 @@ router.put('/users/:id', async (req, res) => {
 router.delete('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedUser = await db.query('DELETE FROM user_mst WHERE user_id = $1 RETURNING *', [id]);
-    if (deletedUser.rows.length === 0) {
+    const [result] = await pool.query('DELETE FROM user_mst WHERE user_id = ?', [id]);
+    if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
     res.json({ message: 'User deleted successfully' });
@@ -102,5 +139,6 @@ router.delete('/users/:id', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 module.exports = router;
