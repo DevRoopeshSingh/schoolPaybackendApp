@@ -1,6 +1,7 @@
 // server.js
 const express = require('express');
 const dotenv = require('dotenv');
+const cors = require('cors');
 const authRoutes = require('./routes/authRoutes'); // Import the new authRoutes
 const userRoutes = require('./routes/userRoutes');
 const feeRoutes = require('./routes/feeRoutes');
@@ -16,6 +17,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Configure CORS to allow requests from your frontend
+app.use(cors({
+  origin: 'http://localhost:5173', // Replace with your frontend URL
+  methods: ['GET', 'POST', 'PUT'], // Allow these HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+}));
 
 app.get('/', (req, res) => {
   res.send('Welcome to the My School App API handling');

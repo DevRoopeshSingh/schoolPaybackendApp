@@ -7,7 +7,7 @@ var db = require('../db'); // Import the MySQL connection
 var router = express.Router();
 var secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
-console.log('Showing Token',secretKey);
+// console.log('Showing Token',secretKey);
 
 // Sign-up endpoint
 router.post('/signup', function(req, res) {
@@ -50,15 +50,26 @@ router.post('/login', async (req, res) => {
 
     console.log('Query the database to find the user:', email_id);
 
-    // Query the database to find the user
-    const query = 'SELECT * FROM user_mst WHERE email_id = ?';
-    const [user] = await db.query(query, [email_id]);
+    // Query the database to find the user and join with user_roles
+    const query = `
+      SELECT um.*, ur.role_name 
+      FROM user_mst um
+      JOIN user_roles ur ON um.user_role_id = ur.role_id
+      WHERE um.email_id = ?
+    `;
+    const [userResponse] = await db.query(query, [email_id]);
+    const user = userResponse[0];
+    console.log('user INFO', user);
+
+    console.log('showing the result of User',user);
+
+
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    console.log('user INFO',user)
+    console.log('user INFO', user);
 
     // Compare password using bcrypt
     // const isMatch = await bcrypt.compare(user_pwd, user.user_pwd);
@@ -66,10 +77,20 @@ router.post('/login', async (req, res) => {
     //   return res.status(401).json({ message: 'Invalid email or password' });
     // }
 
-    console.log('User found:', user);
-    const token = jwt.sign({ id: user.id, email: user.email_id }, secretKey, { expiresIn: '1h' });
+    // Map user_role_id to role string
+    // const roleMapping = {
+    //   1: 'Super Admin',
+    //   2: 'Admin',
+    //   3: 'Teacher',
+    //   4: 'Student',
+    //   5: 'Parent'
+    // };
+    // user.role_name = roleMapping[user.user_role_id] || 'Unknown';
 
-    res.json({ token,user});
+    console.log('User found:', user);
+    const token = jwt.sign({ id: user.id, email: user.email_id, role: user.role_name }, secretKey, { expiresIn: '1h' });
+
+    res.json({ token, user });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Login failed' });
