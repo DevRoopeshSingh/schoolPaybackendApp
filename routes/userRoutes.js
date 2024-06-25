@@ -8,7 +8,7 @@ const pool = require('../db')
 // Get all users
 router.get('/users', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM user_mst;');
+    const [rows] = await pool.query('SELECT um.*, ur.role_name FROM user_mst um JOIN user_roles ur ON um.user_role_id = ur.role_id');
     // console.log('db response', rows);
     res.json(rows); // Send only the rows to the client
   } catch (error) {

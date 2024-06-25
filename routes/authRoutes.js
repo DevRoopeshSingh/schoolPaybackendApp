@@ -55,9 +55,9 @@ router.post('/login', async (req, res) => {
       SELECT um.*, ur.role_name 
       FROM user_mst um
       JOIN user_roles ur ON um.user_role_id = ur.role_id
-      WHERE um.email_id = ?
+      WHERE um.email_id = ? and um.user_pwd = ?
     `;
-    const [userResponse] = await db.query(query, [email_id]);
+    const [userResponse] = await db.query(query, [email_id,user_pwd]);
     const user = userResponse[0];
     console.log('user INFO', user);
 
