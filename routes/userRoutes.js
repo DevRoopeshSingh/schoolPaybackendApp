@@ -62,13 +62,13 @@ router.post('/users', async (req, res) => {
       current_address,
       dob,
       gender,
-      created_by,
-      modified_by
+      // created_by,
+      // modified_by
     } = req.body;
 
     // Validate required fields
     console.log('validate required fields');
-    if (!first_name || !last_name || !email_id || !user_pwd || user_role_id === undefined || is_active === undefined || !phone_no || !dob || !gender || !created_by || !modified_by) {
+    if (!first_name || !last_name || !email_id || !user_pwd || user_role_id === undefined || is_active === undefined || !phone_no || !dob || !gender ) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -83,8 +83,8 @@ router.post('/users', async (req, res) => {
 
     // Insert new user
     const [result] = await pool.query(
-      'INSERT INTO user_mst (first_name, middle_name, last_name, email_id, user_pwd, user_role_id, is_active, phone_no, permanent_address, current_address, dob, gender, created_by, modified_by, created_date, modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-      [first_name, middle_name, last_name, email_id, user_pwd, user_role_id, is_active, phone_no, permanent_address, current_address, dob, gender, created_by, modified_by]
+      'INSERT INTO user_mst (first_name, middle_name, last_name, email_id, user_pwd, user_role_id, is_active, phone_no, permanent_address, current_address, dob, gender, created_by, modified_by, created_date, modified_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "ABC", "ABC", NOW(), NOW())',
+      [first_name, middle_name, last_name, email_id, user_pwd, user_role_id, is_active, phone_no, permanent_address, current_address, dob, gender]
     );
 
     console.log('Create New User');
@@ -104,21 +104,21 @@ router.put('/users/:id', async (req, res) => {
     const { id } = req.params;
 
     console.log('id',id);
-    const { first_name, middle_name, last_name, email } = req.body;
+    const { first_name, middle_name, last_name, email_id } = req.body;
 
     console.log('request Body',req.body);
 
     // Validate request body
-    if (!first_name || !last_name || !email) {
+    if (!first_name || !last_name || !email_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const [result] = await pool.query('UPDATE user_mst SET first_name = ?, middle_name = ?, last_name = ?, email_id = ? WHERE user_id = ?', [first_name, middle_name, last_name, email, id]);
+    const [result] = await pool.query('UPDATE user_mst SET first_name = ?, middle_name = ?, last_name = ?, email_id = ? WHERE user_id = ?', [first_name, middle_name, last_name, email_id, id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
     const [updatedUser] = await pool.query('SELECT * FROM user_mst WHERE user_id = ?', [id]);
-    res.json(updatedUser[0]);
+    res.json({data:updatedUser[0],message:'Data Saved Succesfully'});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });

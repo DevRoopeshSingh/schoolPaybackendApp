@@ -4,7 +4,6 @@ const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 const authenticateJWT = (req, res, next) => {
   const token = req.header('Authorization')?.split(' ')[1]; // Assuming the token is in the Authorization header
 
-  console.log('Token recived',token)
   if (!token) {
     return res.status(401).json({ message: 'Access denied. No token provided.' });
   }
