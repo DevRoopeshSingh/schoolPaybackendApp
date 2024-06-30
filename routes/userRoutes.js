@@ -1,5 +1,6 @@
 // userRoutes.js
 const express = require('express');
+const { format, parseISO } = require('date-fns');
 const router = express.Router();
 const db = require('../db');
 const pool = require('../db')
@@ -8,7 +9,8 @@ const pool = require('../db')
 // Get all users
 router.get('/users', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT um.*, ur.role_name FROM user_mst um JOIN user_roles ur ON um.user_role_id = ur.role_id');
+
+    const [rows] = await pool.query(`SELECT um.*,  ur.role_name,  DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob  FROM  user_mst um JOIN  user_roles ur ON  um.user_role_id = ur.role_id`);
     // console.log('db response', rows);
     res.json(rows); // Send only the rows to the client
   } catch (error) {
@@ -29,7 +31,7 @@ router.get('/users/:id', async (req, res) => {
       return res.status(400).json({ message: 'Invalid user ID' });
     }
 
-    const [rows] = await pool.query('SELECT * FROM user_mst WHERE user_id = ?', [id]);
+    const [rows] = await pool.query(`SELECT *,DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob FROM user_mst WHERE user_id = ?`, [id]);
     console.log('Query Result:', rows); // Log the query result
 
 
@@ -60,7 +62,7 @@ router.post('/users', async (req, res) => {
       phone_no,
       permanent_address,
       current_address,
-      dob,
+      formatted_dob,
       gender,
       // created_by,
       // modified_by
@@ -68,6 +70,8 @@ router.post('/users', async (req, res) => {
 
     // Validate required fields
     console.log('validate required fields');
+    const dob = formatted_dob ? format(parseISO(formatted_dob), 'yyyy-MM-dd') : null;
+
     if (!first_name || !last_name || !email_id || !user_pwd || user_role_id === undefined || is_active === undefined || !phone_no || !dob || !gender ) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
@@ -104,7 +108,7 @@ router.put('/users/:id', async (req, res) => {
     const { id } = req.params;
 
     console.log('id',id);
-    const { first_name, middle_name, last_name, email_id } = req.body;
+    const { first_name, middle_name, last_name, email_id, permanent_address,current_address,formatted_dob,gender,modified_by } = req.body;
 
     console.log('request Body',req.body);
 
@@ -113,11 +117,16 @@ router.put('/users/:id', async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const [result] = await pool.query('UPDATE user_mst SET first_name = ?, middle_name = ?, last_name = ?, email_id = ? WHERE user_id = ?', [first_name, middle_name, last_name, email_id, id]);
+    const dob = formatted_dob ? new Date(formatted_dob).toISOString().slice(0, 10) : null;
+
+    const [result] = await pool.query(
+      'UPDATE user_mst SET first_name = ?, middle_name = ?, last_name = ?, email_id = ?, permanent_address = ?, current_address = ?, dob = ?, gender = ?, modified_by = ? WHERE user_id = ?',
+      [first_name, middle_name, last_name, email_id, permanent_address, current_address, dob, gender, modified_by, id]
+    );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
-    const [updatedUser] = await pool.query('SELECT * FROM user_mst WHERE user_id = ?', [id]);
+    const [updatedUser] = await pool.query(`SELECT um.*,DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob FROM user_mst um WHERE um.user_id = ?`, [id]);
     res.json({data:updatedUser[0],message:'Data Saved Succesfully'});
   } catch (error) {
     console.error(error);
