@@ -52,9 +52,11 @@ router.post('/login', async (req, res) => {
 
     // Query the database to find the user and join with user_roles
     const query = `
-      SELECT um.*, ur.role_name 
+      SELECT um.*, ur.role_name,
+      sm.school_name  
       FROM user_mst um
       JOIN user_roles ur ON um.user_role_id = ur.role_id
+      JOIN school_mst sm on um.school_id = sm.school_id;
       WHERE um.email_id = ? and um.user_pwd = ?
     `;
     const [userResponse] = await db.query(query, [email_id,user_pwd]);

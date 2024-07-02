@@ -70,7 +70,6 @@ router.post('/users', async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    console.log('validate required fields');
     const dob = formatted_dob ? format(parseISO(formatted_dob), 'yyyy-MM-dd') : null;
 
     if (!first_name || !last_name || !email_id || !user_pwd || user_role_id === undefined || is_active === undefined || !phone_no || !dob || !gender || !school_id ) {
@@ -78,7 +77,7 @@ router.post('/users', async (req, res) => {
     }
 
     // Check if the user already exists
-    console.log('Check if the user already exists');
+ 
     const [existingUser] = await pool.query('SELECT * FROM user_mst WHERE email_id = ?', [email_id]);
     if (existingUser.length > 0) {
       return res.status(409).json({ message: 'User already exists' });
@@ -94,7 +93,7 @@ router.post('/users', async (req, res) => {
 
     console.log('Create New User');
 
-    const [newUser] = await pool.query(`SELECT *,DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob FROM user_mst WHERE user_id = ?`, [result.insertId]);
+    const [newUser] = await pool.query(`SELECT um.*,DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob FROM user_mst um WHERE um.user_id = ?`, [result.insertId]);
     res.status(201).json(newUser[0]);
   } catch (error) {
     console.error(error);
