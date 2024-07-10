@@ -4,14 +4,39 @@ const pool = require('../db')
 
 
 // Get all classes
-router.get('/classesAll',  async (req, res) => {
-    try {
-      const [rows] = await pool.query('SELECT * FROM classes');
+router.get('/classesAll', async (req, res) => {
+  try {
+      const xUserHeader = req.header('X-User');
+
+      if (!xUserHeader) {
+          return res.status(400).json({ message: 'X-User header is required' });
+      }
+
+      const xUser = JSON.parse(xUserHeader);
+      const schoolId = xUser.school_id;
+      const userRoleId = xUser.user_role_id;
+
+      console.log('School Id', schoolId);
+      console.log('User Role Id', userRoleId);
+
+      let query = 'SELECT c.*, um.first_name as `teacher_name` FROM classes c join user_mst um on c.class_teacher_id = um.user_id';
+      let queryParams = [];
+
+      // not if user is Super Admin
+      if (userRoleId !== 1) {
+          query += ' WHERE c.school_id = ?';
+          queryParams.push(schoolId);
+      }
+
+      console.log("Ready Query to EXE",query);
+
+      const [rows] = await pool.query(query, queryParams);
       res.json(rows);
-    } catch (err) {
+  } catch (err) {
       res.status(500).json({ error: err.message });
-    }
-  });
+  }
+});
+
 
 // Get a single class by ID
 router.get('/classes/:id', async (req, res) => {
@@ -27,21 +52,27 @@ router.get('/classes/:id', async (req, res) => {
     }});
 
 // Create a new class
-router.post('/classes/', async (req, res) => {
-    const { class_name, class_description, school_id, class_teacher_id, created_by, modified_by } = req.body;
+router.post('/add', async (req, res) => {
+    const { class_name, class_description, school_id, class_teacher_id, created_by =  "Admin", modified_by = "Admin"} = req.body;
     try {
+
+      console.log('Showing eq.body',req.body);
+       
       const [result] = await pool.query(
         'INSERT INTO classes (class_name, class_description, school_id, class_teacher_id, created_by, modified_by) VALUES (?, ?, ?, ?, ?, ?)',
         [class_name, class_description, school_id, class_teacher_id, created_by, modified_by]
       );
-      res.status(201).json({ message: 'Class created', class_id: result.insertId });
+
+      console.log('RESULT------------>',result);
+
+      res.status(201).json({ message: 'Class created successfully!', class_id: result.insertId ,type:"success"});
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   });
 
 // Update a class by ID
-router.put('/classes/:id', async (req, res) => {
+router.put('/update/:id', async (req, res) => {
     const { id } = req.params;
     const { class_name, class_description, school_id, class_teacher_id, modified_by, is_active } = req.body;
     try {
@@ -52,7 +83,7 @@ router.put('/classes/:id', async (req, res) => {
       if (result.affectedRows === 0) {
         return res.status(404).json({ message: 'Class not found' });
       }
-      res.json({ message: 'Class updated' });
+      res.json({ message: 'Class updated successfully!',type:"success" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
