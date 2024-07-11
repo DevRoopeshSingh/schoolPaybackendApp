@@ -278,7 +278,7 @@ router.get('/teachers', async (req, res) => {
     console.log('Role Name:', roleName);
 
     let query = `
-      SELECT um.*, ur.role_name, DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob, sm.school_name 
+      SELECT um.*, ur.role_name, DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob, sm.school_name,CONCAT(um.first_name, ' ', um.middle_name, ' ', um.last_name) AS teacher_name  
       FROM user_mst um 
       JOIN user_roles ur ON um.user_role_id = ur.role_id 
       JOIN school_mst sm ON um.school_id = sm.school_id
@@ -324,7 +324,7 @@ router.get('/students', async (req, res) => {
     console.log('Role Name:', roleName);
 
     let query = `
-      SELECT um.*, ur.role_name, DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob, sm.school_name 
+      SELECT um.*, ur.role_name, DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob, sm.school_name, CONCAT(um.first_name, ' ', um.middle_name, ' ', um.last_name) AS student_name  
       FROM user_mst um 
       JOIN user_roles ur ON um.user_role_id = ur.role_id 
       JOIN school_mst sm ON um.school_id = sm.school_id
@@ -369,7 +369,7 @@ router.get('/parents', async (req, res) => {
     console.log('Role Name:', roleName);
 
     let query = `
-      SELECT um.*, ur.role_name, DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob, sm.school_name 
+      SELECT um.*, ur.role_name, DATE_FORMAT(um.dob, '%Y-%m-%d') AS formatted_dob, sm.school_name, CONCAT(um.first_name, ' ', um.middle_name, ' ', um.last_name) AS parent_name 
       FROM user_mst um 
       JOIN user_roles ur ON um.user_role_id = ur.role_id 
       JOIN school_mst sm ON um.school_id = sm.school_id
